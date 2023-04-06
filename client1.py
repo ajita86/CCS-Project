@@ -3,7 +3,7 @@ import time
 import random
 
 # define the IP address and port number of the server
-SERVER_IP = '10.0.0.232'
+SERVER_IP = '0.0.0.0'
 SERVER_PORT = 8000
 
 # create a socket object
@@ -25,6 +25,8 @@ curr_packet_number = 0
 dropped_packets = []
 total_sent = 0
 swt = 0
+prev_ack = 0
+# drop_packets = []
 
 def toBeOrNotToBe():
     return (random.randint(1, 100) == 1)
@@ -53,7 +55,7 @@ if response == b'success':
             while(index < len(dropped_packets)):
                 if(not toBeOrNotToBe()):
                     packet = dropped_packets[index]
-                    client_socket.send(str.encode(packet))
+                    client_socket.send(str.encode(str(packet)))
                     del dropped_packets[index]
                     print("Retransmission: ",curr_packet_number, "- " , packet)
                     retransmission_sequences_csv.write("{},{}\n".format(packet, time.time()))
@@ -81,19 +83,26 @@ if response == b'success':
                 if window_size > 1:
                     window_size = int(window_size / 2)
                 print ("window_size: ", window_size)
-                dropped_packets.append(str(seq_number))
+                # dropped_packets.append(str(seq_number))
                 print("DROPPED", str(seq_number))
                 dropped_sequences_csv.write("{},{}\n".format(seq_number, time.time()))
 
             curr_packet_number = curr_packet_number + 1
         total_sent += len(to_send)
         swt += len(to_send)
-        random.shuffle(to_send)
+        # random.shuffle(to_send)
 
         # send stage
         for packet in to_send:
+            # print("SND ", packet)
             client_socket.send(str.encode(packet))
-            ack = client_socket.recv(4096)
+            ack = int(str.encode(str(int((client_socket.recv(4096))))))
+            # print("ACK ", ack)
+            if not(prev_ack + 1 == ack):
+                dropped_packets.append(prev_ack + 1);  
+            prev_ack = ack 
+
+        # print("length: ", len(dropped_packets))
         
         if (recv_all_packets):
             window_size = window_size * 2

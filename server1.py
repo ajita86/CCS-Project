@@ -74,7 +74,7 @@ def handle_client_connection(client_socket):
 
             seq_f.write("{},{}\n".format(seq_no, time.time()))
 
-            client_socket.send(str.encode(str(int(seq_no)+packet_size)))
+            client_socket.send(str.encode(str(int(seq_no))))
             # print(packets_received)
             packet_counter = packet_counter + 1
 
