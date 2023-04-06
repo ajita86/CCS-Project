@@ -19,7 +19,7 @@ print(response)
 
 window_size = 8
 packet_size = 1
-total_packets = 1000000
+total_packets = 1000
 max_seq_number = 65536
 curr_packet_number = 0
 dropped_packets = []
@@ -56,15 +56,19 @@ if response == b'success':
                 if(not toBeOrNotToBe()):
                     packet = dropped_packets[index]
                     client_socket.send(str.encode(str(packet)))
+                    # to_send.append(packet)
                     del dropped_packets[index]
-                    print("Retransmission: ",curr_packet_number, "- " , packet)
+                    # print("Retransmission: ",curr_packet_number, "- " , packet)
                     retransmission_sequences_csv.write("{},{}\n".format(packet, time.time()))
                     # print("RESEND --->", packet)
-                    ack = client_socket.recv(4096)
+                    ack = int(str.encode(str(int((client_socket.recv(4096))))))
+                    # print("ACK ", ack)
+                    if not (packet == ack):
+                        dropped_packets_new.append(packet)
                 else:
                     index += 1
                     dropped_packets_new.append(str(seq_number))
-                    print("DROPPED", str(seq_number))
+                    # print("DROPPED", str(seq_number))
                     dropped_sequences_csv.write("{},{}\n".format(seq_number, time.time()))
             
             dropped_packets.extend(dropped_packets_new)
@@ -99,10 +103,14 @@ if response == b'success':
             ack = int(str.encode(str(int((client_socket.recv(4096))))))
             # print("ACK ", ack)
             if not(prev_ack + 1 == ack):
+            # if not (packet == str(ack)):
                 dropped_packets.append(prev_ack + 1);  
+                # print("Check")
+                # dropped_packets.append(packet)
             prev_ack = ack 
 
-        # print("length: ", len(dropped_packets))
+        print("length: ", len(dropped_packets))
+        print(dropped_packets)
         
         if (recv_all_packets):
             window_size = window_size * 2
